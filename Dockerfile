@@ -1,4 +1,4 @@
-#This Dockerfile is for creating the Audio Input container (Phase 1)
+#This Dockerfile is for creating the web page container (Phase 2)
 
 FROM ubuntu:20.04
 
@@ -25,4 +25,4 @@ COPY . /home/ubuntu
 
 ENV DEBIAN_FRONTEND teletype
 
-CMD python3 /home/ubuntu/main.py
+CMD python3 main.py
