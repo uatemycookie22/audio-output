@@ -1,0 +1,40 @@
+<html>
+  <head>
+    <title>Monitor</title>
+    <style>table, th, td {border: 1px solid black;border-collapse: collapse; }</style>
+  </head>
+  <body bgcolor="#c0b1ce">
+    <div>
+      <table id="d_table" style="width: 80%;">
+        <tr>
+          <th>Timestamp</th>
+          <th>Result</th>
+        </tr>
+        <tr>
+          <td>foo</td>
+          <td>{{time_stamp}}</td>
+        </tr>
+      </table>
+    </div>
+    <script>
+      function refresh(d_table){
+        var t = 500;
+        (async function startRefresh(){
+          var adress = 'localhost:5200/stuff';
+          const response = await fetch("/json");
+          const data = await response.json();
+          const html_data = data.html;
+          
+          if (d_table && html_data){
+            d_table.innerHTML = '<tr><th>Name</th><th>Result</th></tr>' + html_data;
+          }
+          setTimeout(startRefresh, t)
+        })();
+      }
+      window.onload = function(){
+        var d_table = document.getElementById('d_table')
+        refresh(d_table)
+      }
+    </script>
+  </body>
+</html>
