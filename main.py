@@ -17,7 +17,7 @@ from flask.templating import render_template
 from werkzeug.utils import redirect
 
 # Configuration constants
-MQTT_SUB_COMMAND = 'mosquitto_sub -h host.docker.internal -p 1883 -C 1 '
+MQTT_SUB_COMMAND = 'mosquitto_sub -h 172.17.0.1 -p 1883 -C 1 '
 MQTT_DETECT_TOPIC = '/stt'
 FLASK_BIND_ADDRESS = '0.0.0.0'
 FLASK_PORT = 5200
