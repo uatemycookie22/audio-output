@@ -1,7 +1,11 @@
 <html>
   <head>
     <title>Monitor</title>
-    <style>table, th, td {border: 1px solid black;border-collapse: collapse; </style>
+    <style>
+    	table {font-family: arial, sans-serif; border-collapse: collapse; width: 80%;}
+    	td, th {border: 1px solid #dddddd; text-align: left; padding: 8px;}
+    	tr:nth-child(even){background-color: #d9d0e2;}
+    </style>
   </head>
   <body bgcolor="#c0b1ce">
     <div id ="d_div">
@@ -40,7 +44,7 @@
           const data = await response.json();
           const html_data = data.html;
           const tts_data = data.tts;
-          const html_headers = '<tr><th>Timestamp</th><th>Result</th><th>TTS</th></tr><td>';
+          const html_headers = '<tr><th>Timestamp</th><th>Result</th><th>TTS</th></tr>';
 			  
 	  let html_audio = '';
     	
