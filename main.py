@@ -17,7 +17,8 @@ from flask.templating import render_template
 from werkzeug.utils import redirect
 
 # Configuration constants
-MQTT_SUB_COMMAND = 'mosquitto_sub -h 172.17.0.1 -p 1883 -C 1 '
+CONTAINED = True #Change to False when running outside a docker container
+MQTT_SUB_COMMAND = 'mosquitto_sub -h ' + (CONTAINED and '172.17.0.1' or '127.0.0.1' ) + ' -p 1883 -C 1 '
 MQTT_DETECT_TOPIC = '/stt'
 FLASK_BIND_ADDRESS = '0.0.0.0'
 FLASK_PORT = 5200
@@ -26,6 +27,7 @@ DUMMY_DETECT_IMAGE='/dummy_detect.jpg'
 # Globals for the cached JSON data (last messages on these MQTT topics)
 last_detect = None
 stt_log = []
+tts_log = []
 table_str = ''
 time_origin = time.time()
 
@@ -33,11 +35,13 @@ time_origin = time.time()
 def tbl_to_html(tbl):
   global table_str
   table_str = ''
-  for log in tbl:
-        print(log['content'])
+  for i,log in enumerate(tbl):
+        sound_src = "data:audio/wav;base64," + tts_log[i]['audio']
+	#<td><audio id="'+log['audio']+'" src="' + sound_src +  '" preload="auto"></audio>\n
         name_str = '       <tr><td>' + log['time'] + '</td>\n'
-        result_str = '       <td>' +  log['content'] + '</td></tr>\n'
-        full_str = name_str + result_str
+        result_str = '       <td>' +  log['content'] + '</td>\n'
+        sound_str = '       <td><button id ="b' + tts_log[i]['name'] + '">Play</button></td></tr>\n'
+        full_str = name_str + result_str + sound_str
         table_str += full_str
 
 def result_to_str(stt_obj):
@@ -53,12 +57,15 @@ if __name__ == '__main__':
   import flask
   from flask import Flask
   from flask import send_file
+  import wave
+  
   webapp = Flask('monitor')                             
   #with webapp.app_context():
   #  url = url_for('stuff')
   
   webapp.config['SEND_FILE_MAX_AGE_DEFAULT'] = 0
-
+	
+  local_i = 0
   # Loop forever collecting object detection / classification data from MQTT
   class DetectThread(threading.Thread):
     def run(self):
@@ -69,12 +76,29 @@ if __name__ == '__main__':
         last_detect = subprocess.check_output(DETECT_COMMAND, shell=True)
 
         if last_detect:
-            detect_json = json.loads(last_detect)
+            detect_obj = json.loads(last_detect)
+            result_obj = detect_obj['result']
+            tts_obj = detect_obj['tts']
+            #print(tts_obj["audio"])
+            #decoded_audio = base64.b64decode(tts_obj["audio"])
+            #print(decoded_audio)
+            global local_i
+            file_name = 'tts' + str(local_i) + '.wav'
+            local_i += 1
+            #fh = wave.open(file_name, 'wb')
+            #fh.setnchannels(1)
+            #fh.setsampwidth(2)
+            #fh.setframerate(22050)
+            #fh.writeframesraw(decoded_audio)
+            
             new_log = {
               "time": str(round(time.time()-time_origin,1)),
-              "content": result_to_str(detect_json)
+              "content": result_to_str(result_obj),
+              "audio": "'" + 'tts' + str(local_i) + "'"
             }
+            tts_obj['name'] = 'tts' + str(local_i)
             stt_log.append(new_log)
+            tts_log.append(tts_obj)
         #print("\n\nMessage received on detect topic...\n")
         #print(last_detect)
 
@@ -83,9 +107,7 @@ if __name__ == '__main__':
     if None == last_detect:
       now = datetime.now().strftime("%Y/%m/%d %-I:%M%p")
       return '{"error":"' + now + ' -- No data yet."}'
-    j = json.loads(last_detect)
-
-    n = j['name']
+      
     tbl_to_html(stt_log)
 
     OUT = \
@@ -132,7 +154,8 @@ if __name__ == '__main__':
     if last_detect:
       tbl_to_html(stt_log)
       table_obj = {
-        "html": table_str
+        "html": table_str,
+        "tts": tts_log
       }
       table_json = json.dumps(table_obj)
       return  table_json + '\n'

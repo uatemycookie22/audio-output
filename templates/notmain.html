@@ -1,39 +1,102 @@
 <html>
   <head>
     <title>Monitor</title>
-    <style>table, th, td {border: 1px solid black;border-collapse: collapse; }</style>
+    <style>table, th, td {border: 1px solid black;border-collapse: collapse; </style>
   </head>
   <body bgcolor="#c0b1ce">
-    <div>
+    <div id ="d_div">
       <table id="d_table" style="width: 80%;">
-        <tr>
+        <tr> 
           <th>Timestamp</th>
           <th>Result</th>
+          <th>Button</th>
         </tr>
         <tr>
-          <td>foo</td>
-          <td>{{time_stamp}}</td>
+          <td>0</td>
+          <td>hello everyone</td>
+          <td>
+           <audio id="tts" src="../../Media/tts.wav" preload="auto"></audio>
+           <button onclick="document.getElementById('tts').play();">Play</button>
+          </td>
         </tr>
       </table>
     </div>
     <script>
-      function refresh(d_table){
-        var t = 500;
-        (async function startRefresh(){
-          var adress = 'localhost:5200/stuff';
+      function refresh(d_table, d_div){
+        var playing = false;
+        let t = 1000;
+        
+        async function untilPlaying(){
+          if (!playing){
+            setTimeout(untilPlaying, t);
+          } 
+        }
+         
+         (async function startRefresh(){
+          
+        
+          let adress = 'localhost:5200/stuff';
           const response = await fetch("/json");
           const data = await response.json();
           const html_data = data.html;
-          
-          if (d_table && html_data){
-            d_table.innerHTML = '<tr><th>Name</th><th>Result</th></tr>' + html_data;
+          const tts_data = data.tts;
+          const html_headers = '<tr><th>Timestamp</th><th>Result</th><th>TTS</th></tr><td>';
+			  
+	  let html_audio = '';
+    	
+          if (d_table && html_data && !playing){
+	    let buttons = []
+	    let sounds = []
+            for (let i = 0; i < data.tts.length; i++) {
+          	let v = data.tts[i];
+          	let snd = new Audio("data:audio/wav;base64," + v.audio)
+          	snd.setAttribute('id',v.name);
+          	html_audio = html_audio + snd.outerHTML;
+          	
+          	buttons.push('b' + v.name)
+          	sounds.push(v.name)
+          	
+	     }
+            
+	    d_div.innerHTML = '<table>' + html_headers + html_data + '</table>' + html_audio
+	    
+	     for (let i = 0; i < buttons.length; i++) {
+	     	let button_name = buttons[i]
+		let snd_name = sounds[i]
+	     	let html_button = document.getElementById(button_name);
+ 		let snd = document.getElementById(snd_name)
+ 		
+          	if (html_button){
+		  	html_button.addEventListener('click', event => {
+		  	  if (!playing){
+			    snd.play();
+			    playing = true;
+			  }
+			});
+			snd.addEventListener('ended', event => {
+			  playing = false;
+			  startRefresh()
+			});
+		}
+	     }
+	    
           }
-          setTimeout(startRefresh, t)
+          
+          if (!playing){
+          	setTimeout(startRefresh, t);
+    		
+          }else{
+          	console.log('Is playing...')
+          	setTimeout(untilPlaying, t);
+          	console.log('Continue refreshing')
+          }
+          
         })();
       }
       window.onload = function(){
         var d_table = document.getElementById('d_table')
-        refresh(d_table)
+        var d_div = document.getElementById('d_div')
+        refresh(d_table, d_div)
       }
     </script>
   </body>
