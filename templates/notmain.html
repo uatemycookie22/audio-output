@@ -17,11 +17,8 @@
         </tr>
         <tr>
           <td>0</td>
-          <td>hello everyone</td>
-          <td>
-           <audio id="tts" src="../../Media/tts.wav" preload="auto"></audio>
-           <button onclick="document.getElementById('tts').play();">Play</button>
-          </td>
+          <td>No results yet</td>
+          <td></td>
         </tr>
       </table>
     </div>
@@ -72,9 +69,13 @@
  		
           	if (html_button){
 		  	html_button.addEventListener('click', event => {
-		  	  if (!playing){
-			    snd.play();
-			    playing = true;
+		  	  if (!playing && snd && snd.src){
+		  	    try{
+			    	snd.play();
+			   	 playing = true;
+			    } catch(error) {
+			    	console.log(error)
+			    }
 			  }
 			});
 			snd.addEventListener('ended', event => {
